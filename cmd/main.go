@@ -14,11 +14,11 @@ type AppConfig struct {
 }
 
 func main() {
-
+	//
 	var cfg AppConfig
 	if err := bincfg.ReadJSON(&cfg); err != nil {
 		if err == bincfg.ErrNotFound {
-			cfg = AppConfig{Endpoint: "https://api.example.com", Debug: true}
+			cfg = AppConfig{Endpoint: "https://api.example.com", Debug: false}
 			fmt.Println("no embedded config; using defaults")
 		} else {
 			log.Fatalf("read config: %v", err)
@@ -27,6 +27,11 @@ func main() {
 	fmt.Printf("running with cfg: %+v\n", cfg)
 	//
 	cfg.Debug = !cfg.Debug
+	if cfg.Debug {
+		cfg.Endpoint = "https://api.example.com/looooooooooooooooooooooooooooooooooooooooondebug"
+	} else {
+		cfg.Endpoint = "https://api.example.com"
+	}
 	if err := bincfg.WriteJSON(cfg, true); err != nil {
 		if err == bincfg.ErrPendingReplace {
 			// Windows
