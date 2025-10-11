@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"bincfg"
+	"github.com/aynakeya/bincfg"
 )
 
 type AppConfig struct {

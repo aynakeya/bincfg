@@ -1,4 +1,4 @@
-module bincfg
+module github.com/aynakeya/bincfg
 
 go 1.24
 
