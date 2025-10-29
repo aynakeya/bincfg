@@ -1,15 +1,18 @@
 package bincfg
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"hash/crc32"
+	"io"
 	"os"
 )
 
 const (
-	magic    = "\x07\x21\xbc\xf9" // 0721 bcfg
-	version  = uint16(0x0001)
+	magic   = "\x07\x21\xbc\xf9" // 0721 bcfg
+	version = uint16(0x0001)
+	// = int8(cfg) << 8 | uint8(type). lower byte for type, higher byte for options
 	encoding = uint16(0x0000)
 )
 
@@ -73,11 +76,12 @@ func (h Header) Size() int64 {
 	return headerSize + int64(h.Len)
 }
 
-func (h Header) ReadPayload(f *os.File, payload []byte) error {
+func (h Header) ReadPayload(f *os.File, buf io.Writer) error {
 	st, err := f.Stat()
 	if err != nil {
 		return err
 	}
+	payload := make([]byte, h.Len)
 	n, err := f.ReadAt(payload, h.PayloadOffset(st.Size()))
 	if err != nil {
 		return err
@@ -87,6 +91,10 @@ func (h Header) ReadPayload(f *os.File, payload []byte) error {
 	}
 	if crc32.ChecksumIEEE(payload) != h.CRC32 {
 		return ErrCorrupted
+	}
+	err = Decode(h.Encoding, bytes.NewReader(payload), buf)
+	if err != nil {
+		return err
 	}
 	return nil
 }

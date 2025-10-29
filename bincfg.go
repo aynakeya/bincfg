@@ -1,6 +1,7 @@
 package bincfg
 
 import (
+	"bytes"
 	"github.com/inconshreveable/go-update"
 	"hash/crc32"
 	"io"
@@ -32,29 +33,38 @@ func ReadRaw() ([]byte, error) {
 		return nil, err
 	}
 
-	payload := make([]byte, header.Len)
-	err = header.ReadPayload(f, payload)
+	var buf bytes.Buffer
+	err = header.ReadPayload(f, &buf)
 
-	return payload, err
+	return buf.Bytes(), err
 }
 
-func WriteRaw(payload []byte) error {
+func WriteRaw(payload []byte, encoding uint16) error {
 	self, err := binaryPath()
 	if err != nil {
 		return err
 	}
 	tmpDir := filepath.Dir(self)
 
+	var encodedPayload bytes.Buffer
+
+	err = Encode(encoding, bytes.NewReader(payload), &encodedPayload)
+	if err != nil {
+		return err
+	}
+	payload = encodedPayload.Bytes()
+
 	var h Header
 	copy(h.Magic[:], []byte(magic))
 	h.Version = version
+	h.Encoding = encoding
 	h.Len = uint32(len(payload))
 	h.CRC32 = crc32.ChecksumIEEE(payload)
 
 	trailer := make([]byte, headerSize)
 
 	h.Dump(trailer)
-	
+
 	src, err := os.Open(self)
 	if err != nil {
 		return err

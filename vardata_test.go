@@ -20,10 +20,10 @@ func TestVarData_RoundTrip_Basic(t *testing.T) {
 	t.Parallel()
 
 	in := map[string][]byte{
-		"foo":  []byte("hello world"),
-		"bar":  {1, 2, 3, 4},
-		"baz":  {},
-		"中文": []byte("内容"),
+		"foo": []byte("hello world"),
+		"bar": {1, 2, 3, 4},
+		"baz": {},
+		"中文":  []byte("内容"),
 	}
 
 	blob := VarDataDump(in)

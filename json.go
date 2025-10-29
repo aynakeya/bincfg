@@ -23,5 +23,5 @@ func WriteJSON(v any, pretty bool) error {
 	if err != nil {
 		return err
 	}
-	return WriteRaw(b)
+	return WriteRaw(b, Encoding(EncodingGzip, DefaultCompression))
 }
