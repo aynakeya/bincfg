@@ -50,9 +50,12 @@ func Encoding(encType uint8, encCfg int8) uint16 {
 	return uint16(uint8(encCfg))<<8 | uint16(encType)
 }
 
+func EncodingInfo(encoding uint16) (encType uint8, encCfg int8) {
+	return uint8(encoding & 0x00FF), int8((encoding & 0xFF00) >> 8)
+}
+
 func Encode(encoding uint16, src io.Reader, writer io.Writer) error {
-	encType := uint8(encoding & 0x00FF)
-	encCfg := int8((encoding & 0xFF00) >> 8)
+	encType, encCfg := EncodingInfo(encoding)
 	enc, ok := encodingRegistry[encType]
 	if !ok {
 		return ErrEncodingNotSupported
@@ -61,8 +64,7 @@ func Encode(encoding uint16, src io.Reader, writer io.Writer) error {
 }
 
 func Decode(encoding uint16, src io.Reader, writer io.Writer) error {
-	encType := uint8(encoding & 0x00FF)
-	encCfg := int8((encoding & 0xFF00) >> 8)
+	encType, encCfg := EncodingInfo(encoding)
 	enc, ok := encodingRegistry[encType]
 	if !ok {
 		return ErrEncodingNotSupported

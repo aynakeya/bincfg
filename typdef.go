@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	magic   = "\x07\x21\xbc\xf9" // 0721 bcfg
+	magic = "\x07\x21\xbc\xf9" // 0721 bcfg
+	// current version
 	version = uint16(0x0001)
 	// = int8(cfg) << 8 | uint8(type). lower byte for type, higher byte for options
 	encoding = uint16(0x0000)
