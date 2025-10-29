@@ -6,6 +6,7 @@ import (
 	"compress/lzw"
 	"compress/zlib"
 	"errors"
+	"github.com/klauspost/compress/zstd"
 	"io"
 )
 
@@ -31,6 +32,9 @@ const (
 	EncodingLZW
 	// EncodingZlib option: NoCompression, BestSpeed, BestCompression, HuffmanOnly, DefaultCompression
 	EncodingZlib
+	// EncodingZstd option: 1 = zstd.SpeedFastest,  2 = zstd.SpeedDefault,
+	// 3 = zstd.SpeedBetterCompression, 4 = zstd.SpeedBestCompression
+	EncodingZstd
 )
 
 var encodingRegistry = map[uint8]Encoder{
@@ -39,6 +43,7 @@ var encodingRegistry = map[uint8]Encoder{
 	EncodingFlate:     flateEncoding{},
 	EncodingLZW:       lzwEncoding{},
 	EncodingZlib:      zlibEncoding{},
+	EncodingZstd:      zstdEncoding{},
 }
 
 func Encoding(encType uint8, encCfg int8) uint16 {
@@ -182,4 +187,30 @@ func (z zlibEncoding) Decode(cfg int8, src io.Reader, writer io.Writer) error {
 		return err
 	}
 	return zr.Close()
+}
+
+type zstdEncoding struct{}
+
+func (z zstdEncoding) Encode(cfg int8, src io.Reader, w io.Writer) error {
+	zw, err := zstd.NewWriter(w, zstd.WithEncoderLevel(zstd.EncoderLevelFromZstd(int(cfg))))
+	if err != nil {
+		return err
+	}
+	if _, err = io.Copy(zw, src); err != nil {
+		_ = zw.Close()
+		return err
+	}
+	return zw.Close()
+}
+
+func (z zstdEncoding) Decode(cfg int8, r io.Reader, w io.Writer) error {
+	zr, err := zstd.NewReader(r)
+	if err != nil {
+		return err
+	}
+	if _, err = io.Copy(w, zr); err != nil {
+		return err
+	}
+	zr.Close()
+	return nil
 }

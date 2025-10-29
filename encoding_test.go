@@ -219,3 +219,44 @@ func TestLargeStream_Roundtrip(t *testing.T) {
 		})
 	}
 }
+
+func TestEncodeDecode_Zstd_Roundtrip_MultipleLevels(t *testing.T) {
+	src := repeatData("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 50_000)
+	levels := []int8{1, 3, 7, 15, 19, 22}
+	for _, lv := range levels {
+		t.Run(fmt.Sprintf("zstd_lv=%d", lv), func(t *testing.T) {
+			var encBuf, decBuf bytes.Buffer
+			err := Encode(mkEnc(lv, EncodingZstd), bytes.NewReader(src), &encBuf)
+			require.NoError(t, err, "encode failed")
+
+			err = Decode(mkEnc(lv, EncodingZstd), bytes.NewReader(encBuf.Bytes()), &decBuf)
+			require.NoError(t, err, "decode failed")
+			require.Equal(t, src, decBuf.Bytes(), "decoded output mismatch")
+		})
+	}
+}
+
+func TestCompressionLevel_Zstd_SizeOrdering(t *testing.T) {
+	// 高度可压缩数据
+	src := repeatData(strings.Repeat("A", 512), 40_000)
+
+	var best, fast bytes.Buffer
+	require.NoError(t, Encode(mkEnc(3, EncodingZstd), bytes.NewReader(src), &fast))  // 较快，低压缩
+	require.NoError(t, Encode(mkEnc(19, EncodingZstd), bytes.NewReader(src), &best)) // 高压缩率
+
+	t.Logf("Zstd size: fast=%d, best=%d", fast.Len(), best.Len())
+	require.Greater(t, fast.Len(), best.Len(),
+		"BestCompression (lv19) should yield smaller size than low-level (lv3)")
+}
+
+func TestZstd_VS_Gzip_SizeComparison(t *testing.T) {
+	src := repeatData(strings.Repeat("ABCD", 128), 30_000)
+
+	var zstdBuf, gzipBuf bytes.Buffer
+	require.NoError(t, Encode(mkEnc(15, EncodingZstd), bytes.NewReader(src), &zstdBuf))
+	require.NoError(t, Encode(mkEnc(BestCompression, EncodingGzip), bytes.NewReader(src), &gzipBuf))
+
+	t.Logf("Zstd lv15 size=%d, Gzip best size=%d", zstdBuf.Len(), gzipBuf.Len())
+	require.GreaterOrEqual(t, gzipBuf.Len(), zstdBuf.Len(),
+		"Zstd should generally produce smaller or equal output than Gzip(best)")
+}

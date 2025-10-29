@@ -4,6 +4,7 @@ go 1.24
 
 require (
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
+	github.com/klauspost/compress v1.18.1
 	github.com/stretchr/testify v1.11.1
 )
 
