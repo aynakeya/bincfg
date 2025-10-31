@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 )
 
-func binaryPath() (string, error) {
+func BinaryPath() (string, error) {
 	p, err := os.Executable()
 	if err != nil {
 		return "", err
@@ -17,12 +17,16 @@ func binaryPath() (string, error) {
 	return filepath.EvalSymlinks(p)
 }
 
-func ReadRaw() ([]byte, error) {
-	self, err := binaryPath()
-	if err != nil {
-		return nil, err
+func Self() string {
+	p, _ := BinaryPath()
+	return p
+}
+
+func ReadRaw(path string) ([]byte, error) {
+	if path == "" {
+		return nil, ErrNotFound
 	}
-	f, err := os.Open(self)
+	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
@@ -39,13 +43,12 @@ func ReadRaw() ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func WriteRaw(payload []byte, encoding uint16) error {
-	self, err := binaryPath()
-	if err != nil {
-		return err
+func WriteRaw(path string, payload []byte, encoding uint16) error {
+	if path == "" {
+		return ErrNotFound
 	}
-	tmpDir := filepath.Dir(self)
-
+	tmpDir := filepath.Dir(path)
+	var err error
 	var encodedPayload bytes.Buffer
 
 	err = Encode(encoding, bytes.NewReader(payload), &encodedPayload)
@@ -65,7 +68,7 @@ func WriteRaw(payload []byte, encoding uint16) error {
 
 	h.Dump(trailer)
 
-	src, err := os.Open(self)
+	src, err := os.Open(path)
 	if err != nil {
 		return err
 	}
@@ -83,7 +86,7 @@ func WriteRaw(payload []byte, encoding uint16) error {
 		baseSize = baseSize - headerSize - int64(originHeader.Len)
 	}
 
-	tmp, err := os.CreateTemp(tmpDir, filepath.Base(self)+".tmp-*")
+	tmp, err := os.CreateTemp(tmpDir, filepath.Base(path)+".tmp-*")
 	if err != nil {
 		return err
 	}
@@ -108,7 +111,7 @@ func WriteRaw(payload []byte, encoding uint16) error {
 	}
 	_, _ = tmp.Seek(0, io.SeekStart)
 	return update.Apply(tmp, update.Options{
-		TargetPath: self,
+		TargetPath: path,
 		TargetMode: srcStat.Mode(),
 	})
 }

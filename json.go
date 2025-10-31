@@ -4,7 +4,7 @@ import "encoding/json"
 
 // ReadJSON 读取并反序列化为 v
 func ReadJSON(v any) error {
-	b, err := ReadRaw()
+	b, err := ReadRaw(Self())
 	if err != nil {
 		return err
 	}
@@ -23,5 +23,5 @@ func WriteJSON(v any, pretty bool) error {
 	if err != nil {
 		return err
 	}
-	return WriteRaw(b, Encoding(EncodingGzip, DefaultCompression))
+	return WriteRaw(Self(), b, Encoding(EncodingZstd, 4))
 }

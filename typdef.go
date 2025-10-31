@@ -25,7 +25,7 @@ const (
 	offsetCRC32    = offsetLen + 4
 )
 
-// headerSize = magic(4) + ver(2) + noused(2) + len(4) + crc32(4) = 16
+// headerSize = magic(4) + ver(2) + encoding(2) + len(4) + crc32(4) = 16
 const (
 	magicSize  = int64(len(magic))
 	headerSize = offsetCRC32 + 4
